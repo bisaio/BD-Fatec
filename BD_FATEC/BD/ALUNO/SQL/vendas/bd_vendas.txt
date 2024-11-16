@@ -1,0 +1,641 @@
+-----------------------------------------------------------------------------------
+-- CRIAÇÃO DO BANCO DE DADOS
+-----------------------------------------------------------------------------------
+CREATE DATABASE Vendas_ADSBD;
+GO
+
+-----------------------------------------------------------------------------------
+-- ACESSO AO BANCO DE DADOS
+-----------------------------------------------------------------------------------
+USE Vendas_ADSBD;
+GO
+
+-----------------------------------------------------------------------------------
+-- CRIAR A TABELA PESSOAS
+-----------------------------------------------------------------------------------
+CREATE TABLE pessoa
+(
+	id	INT	    NOT NULL PRIMARY KEY IDENTITY, -- autoincremento
+	nome	VARCHAR(50) NOT NULL,
+	cpf	VARCHAR(14) NOT NULL UNIQUE,
+	status	INT		NULL,
+	--restricao
+	CHECK(status IN (1,2)) 
+);
+GO
+
+-----------------------------------------------------------------------------------
+-- CRIAR A TABELA CLIENTES
+-----------------------------------------------------------------------------------
+CREATE TABLE cliente
+(
+	pessoaId	INT	      NOT NULL PRIMARY KEY,
+	renda		DECIMAL(10,2) NOT NULL,
+	credito		DECIMAL(10,2) NOT NULL
+	--definir a chave estrangeira (FK)
+	FOREIGN KEY (pessoaId) REFERENCES pessoa (id), 
+	--restricoes
+	CHECK(renda >= 700.00),
+	CHECK(credito >= 100.00)
+);
+GO
+
+-----------------------------------------------------------------------------------
+-- CRIAR A TABELA VENDEDOR
+-----------------------------------------------------------------------------------
+CREATE TABLE vendedor
+(
+	pessoaId	INT	      NOT NULL PRIMARY KEY,
+	salario		DECIMAL(10,2) NOT NULL
+	--definir a chave estrangeira (FK)
+	FOREIGN KEY (pessoaId) REFERENCES pessoa (id), 
+	--restricoes
+	CHECK(salario >= 1000.00),
+);
+GO
+
+-----------------------------------------------------------------------------------
+-- CRIAR A TABELA PEDIDOS
+-----------------------------------------------------------------------------------
+CREATE TABLE pedido
+(
+	id		   INT		NOT NULL PRIMARY KEY IDENTITY,
+	data	   DATETIME NOT NULL,
+	valor	   MONEY		NULL,
+	status	   INT			NULL CHECK (status IN (1,2,3)),
+	vendedorId INT		NOT NULL,
+	clienteId  INT		NOT NULL,
+	--definir a chave estrangeira (FK)
+	FOREIGN KEY (vendedorId) REFERENCES vendedor (pessoaId), 
+	FOREIGN KEY (clienteId)  REFERENCES cliente  (pessoaId),
+);
+GO
+
+-----------------------------------------------------------------------------------
+-- CRIAR A TABELA PRODUTOS
+-----------------------------------------------------------------------------------
+CREATE TABLE produto
+(
+	id	   INT		NOT NULL PRIMARY KEY IDENTITY,
+	descricao  VARCHAR(100) NOT NULL,
+	qtd	   INT		    NULL CHECK (qtd >= 0),
+	valor	   MONEY	    NULL CHECK (valor > 0),
+	status	   INT		    NULL CHECK (status IN (1,2)),
+);
+GO
+
+-----------------------------------------------------------------------------------
+-- CRIAR A TABELA ITENS_PEDIDOS
+-----------------------------------------------------------------------------------
+CREATE TABLE itens_pedido
+(
+	pedidoId  INT		 NOT NULL,
+	produtoId INT		 NOT NULL,
+	qtd	  INT		     NULL,
+	valor	  DECIMAL (10,2)     NULL,
+	--definir a chave primaria composta
+	PRIMARY KEY(pedidoId, produtoId),
+	--definir as chaves estrangeiras
+	FOREIGN KEY(pedidoId)  REFERENCES pedido (id),
+	FOREIGN KEY(produtoId) REFERENCES produto(id),
+	--restricoes
+	CHECK (qtd > 0),
+	CHECK (valor > 0)
+);
+GO
+
+
+
+
+-----------------------------------------------------------------------------------
+-- CONSULTAR TODAS AS TABELAS
+-----------------------------------------------------------------------------------
+SELECT * FROM pessoa;
+GO
+SELECT * FROM cliente;
+GO
+SELECT * FROM vendedor;
+GO
+SELECT * FROM pedido;
+GO
+SELECT * FROM itens_pedido;
+GO
+
+
+
+
+
+-----------------------------------------------------------------------------------
+-- CRUD - CREAT - INSERT
+-----------------------------------------------------------------------------------
+
+-----------------------------------------------------------------------------------
+-- INSERT TABELA PESSOAS
+-----------------------------------------------------------------------------------
+INSERT INTO pessoa (nome, cpf, status) VALUES ('Dom Pedro I','111.111.111-11', 1);
+GO
+
+INSERT INTO pessoa VALUES ('Donna Valeria II','222.222.222-22', 2);
+GO
+
+INSERT INTO pessoa (nome, cpf) VALUES ('Don Juan III','333.333.333-33') -- sem cadastrar status pq aceita null
+GO
+
+INSERT INTO pessoa 
+	(nome, cpf, status) 
+VALUES 
+	('Lucimar IV','444.444.444-44', 2),
+	('Viana V','555.555.555-55', 1),
+	('Dezani VI','666.666.666-66', 1),
+	('Mariangela VII','777.777.777-77', 2),
+	('Adriano VIII','888.888.888-88', null),
+	('Lucimeiri IX','999.999.999-99', 1),
+	('Teso X','101.010.101-01', 2);
+GO
+
+
+INSERT INTO  pessoa (nome, cpf) VALUES ('Ziraldo', '212-212-212-22')
+GO
+
+-----------------------------------------------------------------------------------
+-- INSERT TABELA CLIENTES
+-----------------------------------------------------------------------------------
+INSERT INTO cliente (pessoaId, renda, credito) VALUES (1, 3000.00, 1500.00);
+GO
+
+--cadastrar varios clientes em um comando
+INSERT INTO cliente (pessoaId, renda, credito) 
+VALUES (3, 5000.00, 2000.00),
+	   (5, 2500.00, 750.00),
+	   (7, 5000.00, 3000.00),
+	   (9, 2000.00, 1000.00)
+GO
+
+-----------------------------------------------------------------------------------
+-- INSERT TABELA VENDEDOR
+-----------------------------------------------------------------------------------
+INSERT INTO vendedor (pessoaId, salario) VALUES (2, 3500.00)
+GO
+
+--cadastrar varios vendedores em um comando sem especificar as colunas
+INSERT INTO vendedor
+VALUES (4, 2500.00),
+	   (6, 3000.00),
+	   (8, 1500.00),
+	   (10, 2200.00)
+GO
+
+-----------------------------------------------------------------------------------
+-- INSERT TABELA PRODUTOS
+-----------------------------------------------------------------------------------
+INSERT INTO produto (descricao, qtd, valor, status) 
+VALUES ('Coca-Cola', 150, 5.50, 1)
+GO
+
+--status nulo
+INSERT INTO produto (descricao, qtd, valor)
+VALUES ('Bolo de chocolate', 25, 30.00)
+GO
+
+--cadastrar varios produtos em um comando
+INSERT INTO produto (descricao, qtd, valor, status)
+VALUES ('Lanche natural', 250, 15.00, 1),
+	   ('Bombom de chocolate com castanha', 100, 10, 1),
+	   ('Bala baiana', 150, 3.50, 2),
+	   ('Rosquinha espera marido', 200, 1.50, 1),
+	   ('Chocolate ao leite', 50, 8.59, 2),
+	   ('Sorvete de chocolate', 15, 10.00, 1),
+	   ('Bolo de fubá', 5, 18.90, 1),
+	   ('Coxinha de frango', 20, 7.50, 1),
+	   ('Cotuba', 250, 7.89, 2)
+GO
+
+-----------------------------------------------------------------------------------
+-- INSERT TABELA PEDIDO
+-----------------------------------------------------------------------------------
+INSERT INTO pedido (data, status, vendedorId, clienteId) 
+VALUES ('2023-25-10', 1, 6, 3);
+GO
+
+--cadastrar pedido com status null
+INSERT INTO pedido (data, vendedorId, clienteId) 
+VALUES ('2023-19-12', 4, 1);
+GO
+
+--cadastrar um pedido com a data atual
+INSERT INTO pedido (data, status, vendedorId, clienteId) 
+VALUES (GETDATE(), 1, 2, 5);
+GO
+
+--cadastrar varios pedidos em um comando
+INSERT INTO pedido (data, status, vendedorId, clienteId) 
+VALUES ('2024-03-02', 2, 8, 9),
+       (GETDATE(), 1, 8, 3)
+GO
+
+-----------------------------------------------------------------------------------
+-- INSERT TABELA ITENS_PEDIDO
+-----------------------------------------------------------------------------------
+-- N x N
+
+-- Pedido 1
+INSERT INTO itens_pedido (pedidoId, produtoId, qtd, valor) 
+VALUES (1, 2, 5, 27.50),
+       (1, 8, 1, 10.00),
+       (1, 6, 20, 1.50),
+       (1, 1, 2, 5.50)
+GO
+
+-- Pedido 2
+INSERT INTO itens_pedido (pedidoId, produtoId, qtd, valor) 
+VALUES (2, 4, 5, 5.99),
+       (2, 11, 50, 6.99),
+       (2, 9, 1, 18.90)
+GO
+
+-- Pedido 3
+INSERT INTO itens_pedido (pedidoId, produtoId, qtd, valor) 
+VALUES (3, 1, 5, 5.50),
+	   (3, 11, 12, 7.89)
+GO
+
+-- Pedido 5
+INSERT INTO itens_pedido (pedidoId, produtoId, qtd, valor) 
+VALUES (5, 2, 5, 30.00),
+       (5, 3, 1, 15.00),
+       (5, 9, 2, 18.90)
+GO
+
+
+
+
+-----------------------------------------------------------------------------------
+-- CRUD - READ - SELECT
+-----------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------
+-- SELECT TABELA PESSOAS
+-----------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------
+-- 1) Selecionar todas as pessoas cadastradas
+-----------------------------------------------------------------------------------
+--especificando as colunas da tabela
+SELECT 
+	pessoa.id, 
+	pessoa.nome, 
+	pessoa.cpf, 
+	pessoa.status 
+FROM 
+	pessoa
+GO
+
+--usando * que representa todas as colunas
+SELECT * FROM pessoa
+GO
+
+-----------------------------------------------------------------------------------
+-- 2) Selecionar todos os Produtos com valor maior ou igual a 5
+-----------------------------------------------------------------------------------
+SELECT * FROM produto WHERE valor >= 5.00
+
+-----------------------------------------------------------------------------------
+-- 3) Selecionar todos os Produtos com valor maior ou igual a 5 ou status igual a 2
+-----------------------------------------------------------------------------------
+SELECT * FROM produto 
+WHERE status = 2 OR valor >= 5.00
+GO
+
+-----------------------------------------------------------------------------------
+-- 4) Selecionar todos os Produtos com descricao chocolate ao leite
+-----------------------------------------------------------------------------------
+SELECT * FROM produto WHERE descricao = 'chocolate ao leite'
+GO
+
+-----------------------------------------------------------------------------------
+-- 5) Selecionar todos os Produtos cuja descricao tenha a letra A
+-----------------------------------------------------------------------------------
+SELECT * FROM produto WHERE descricao LIKE '%a%' --LIKE só funciona com varchar
+GO
+
+-----------------------------------------------------------------------------------
+-- 6) Selecionar todos os Produtos cuja descricao tenha a silaba CO no inicio
+-----------------------------------------------------------------------------------
+SELECT * FROM produto WHERE descricao LIKE 'co%'
+GO
+
+-----------------------------------------------------------------------------------
+-- 7) Selecionar todos os Produtos cuja descricao termine com a letra O
+-----------------------------------------------------------------------------------
+SELECT * FROM produto WHERE descricao LIKE '%o'
+GO
+
+-----------------------------------------------------------------------------------
+-- 8) Selecionar todos os Produtos cuja descricao inicie com qualquer letra,
+-- a segunda letra seja O, a terceira letra seja qualquer uma,
+-- a quarta letra seja O e as demais podem ser qualquer coisa
+-----------------------------------------------------------------------------------
+SELECT * FROM produto WHERE descricao LIKE '_o_o%'
+GO
+
+-----------------------------------------------------------------------------------
+-- 9) Selecionar todos os Produtos com valor entre 3 e 17
+-----------------------------------------------------------------------------------
+--usando between
+SELECT * FROM produto 
+WHERE valor BETWEEN 3.00 AND 17.00
+GO
+
+--usando operadores
+SELECT 
+	produto.* 
+FROM 
+	produto 
+WHERE
+	produto.valor >= 3.00 
+	AND produto.valor <= 17.00
+GO
+
+-----------------------------------------------------------------------------------
+-- 10) Selecionar os produtos renomeando as colunas da tabela resultante
+-----------------------------------------------------------------------------------
+SELECT 
+       id        as cod_Produto, 
+       descricao as Produto, 
+       qtd          'Estoque disponivel', --usa aspas por ser composta
+       valor     as Preço,
+       status    as Situação     
+FROM produto
+GO
+
+--outra forma
+SELECT 
+       id        cod_Produto, 
+       descricao Produto, 
+       qtd       [Estoque disponivel],
+       valor     Preço,
+       status    Situação     
+FROM produto
+GO
+
+-----------------------------------------------------------------------------------
+-- 11) Selecionar o valor de PI
+-----------------------------------------------------------------------------------
+SELECT PI() PI
+GO
+
+-----------------------------------------------------------------------------------
+-- 12) Selecionar o valor de PI
+-----------------------------------------------------------------------------------
+SELECT 78.56/23.54*PI()
+GO
+
+-----------------------------------------------------------------------------------
+-- 13) Selecionar o calcula da raiz quadrada de um numero
+-----------------------------------------------------------------------------------
+SELECT SQRT(36) [raiz quadrada]
+GO
+
+-----------------------------------------------------------------------------------
+-- 14) Selecionar todos os produtos colocando a descrição em letra maisucula
+-----------------------------------------------------------------------------------
+SELECT 
+       id               cod_produto, 
+       UPPER(descricao) Produto, 
+       qtd              [Estoque disponivel],
+       valor            Preço,
+       status           Situação
+FROM produto
+GO
+
+-----------------------------------------------------------------------------------
+-- 15) Selecionar todos os produtos calculando o faturamento de cada produto
+-- dando um apelido (alias) para a tabela
+-----------------------------------------------------------------------------------
+SELECT
+	p.*,
+	(p.qtd * p.valor) Faturamento
+FROM
+	produto as p
+
+-----------------------------------------------------------------------------------
+-- 16) Selecionar a quantidade de itens cadastrados na tabela produto
+-----------------------------------------------------------------------------------
+SELECT COUNT(*) 'Qtd itens' FROM produto
+GO
+
+-----------------------------------------------------------------------------------
+-- 17) Calcular o preço médio dos produtos cadastrados
+-----------------------------------------------------------------------------------
+SELECT AVG(valor) 'Preço médio do Estoque' FROM produto
+GO
+
+-----------------------------------------------------------------------------------
+-- 18) Consular o preço do produto mais CARO cadastrado
+-----------------------------------------------------------------------------------
+SELECT MAX(valor) 'Preço mais caro' FROM produto
+GO
+
+-----------------------------------------------------------------------------------
+-- 19) Consular o preço do produto mais BARATO cadastrado
+-----------------------------------------------------------------------------------
+SELECT MIN(valor) 'Preço mais barato' FROM produto
+GO
+
+-----------------------------------------------------------------------------------
+-- 20) Consular a quantidade de produtos em estoque
+-----------------------------------------------------------------------------------
+SELECT SUM(qtd) 'Total Produtos Estoque' FROM produto
+GO
+
+-----------------------------------------------------------------------------------
+-- 21) Consultar o valor total do estoque
+-----------------------------------------------------------------------------------
+SELECT SUM(qtd * valor) 'Valor Total Estoque' FROM produto
+GO
+
+-----------------------------------------------------------------------------------
+-- 22) Todas as consultas com as funções 
+-----------------------------------------------------------------------------------
+SELECT 
+	COUNT(*)   	 'Total Itens', 
+	AVG(valor)  	 'Preço Médio', 
+	MAX(valor) 	 'Produto mais CARO', 
+	MIN(valor) 	 'Produto mais BARATO',
+	SUM(qtd)   	 'Total Produtos Estoque',
+	SUM(qtd * valor) 'Valor Total do Estoque'
+FROM
+	produto
+GO
+
+-----------------------------------------------------------------------------------
+-- 23) Consultar os dados dos produtos 1, 4, 7, 9 e 11
+-- IN é 'pertence ao conjunto'
+-----------------------------------------------------------------------------------
+SELECT * FROM produto
+WHERE id IN (1, 4, 7, 9, 11)
+GO
+
+-----------------------------------------------------------------------------------
+-- 23) Consultar os dados dos produtos com id diferente de 1, 4, 7, 9 e 11
+-- NOT IN é 'não pertence ao conjunto'
+-----------------------------------------------------------------------------------
+SELECT * FROM produto
+WHERE id NOT IN (1, 4, 7, 9, 11)
+GO
+
+-----------------------------------------------------------------------------------
+-- 24) Consultar o total do pedido 1
+-----------------------------------------------------------------------------------
+SELECT SUM(qtd * valor) 'Total Pedido' FROM itens_pedido
+WHERE pedidoId = 1
+GO
+
+-----------------------------------------------------------------------------------
+-- 25) Consultar o total do pedido 3
+-----------------------------------------------------------------------------------
+SELECT SUM(qtd * valor) 'Total Pedido' FROM itens_pedido
+WHERE pedidoId = 3
+GO
+
+-----------------------------------------------------------------------------------
+-- 26) Consultar todos os clientes. Saida deve trazer o id, nome, cpf, status, renda e crédito 
+-----------------------------------------------------------------------------------
+SELECT pessoa.id, pessoa.nome, pessoa.cpf, pessoa.status,
+       cliente.pessoaId, cliente.renda, cliente.credito
+FROM pessoa, cliente
+WHERE pessoa.id = cliente.pessoaId
+GO 
+
+-----------------------------------------------------------------------------------
+-- 27) Consultar todos os vendedores. Saida deve trazer o id, nome, cpf, status, salario
+-- todo vendedor é pessoa
+-----------------------------------------------------------------------------------
+SELECT pessoa.id, pessoa.nome, pessoa.cpf, pessoa.status,
+       vendedor.pessoaId, vendedor.salario
+FROM pessoa, vendedor
+WHERE pessoa.id = vendedor.pessoaId
+GO
+
+-----------------------------------------------------------------------------------
+-- 28) Consultar todos os clientes que fizeram pedidos. 
+-- Saida: id, nome, cpf, status, renda e credito do cliente + id, data, status do pedido
+-- todo cliente é pessoa
+-- usar apelido (alias) para as tabelas
+-----------------------------------------------------------------------------------
+SELECT P.id, P.nome, P.cpf, P.status,
+       C.renda, C.credito,
+	   PE.id, PE.data, PE.status
+FROM pessoa as P, cliente as C, pedido as PE 
+WHERE P.id = C.pessoaId AND c.pessoaId = PE.clienteId
+GO 
+
+--renomeando as colunas
+SELECT P.id cod_cliente, P.nome cliente, P.cpf cpf_cliente, P.status status_cliente,
+       C.renda 'renda cliente', C.credito [credito cliente],
+       PE.id no_predido, PE.data data_predido, PE.status status_predido
+FROM pessoa P, cliente C, pedido PE 
+WHERE P.id = C.pessoaId AND c.pessoaId = PE.clienteId
+GO 
+
+-----------------------------------------------------------------------------------
+-- 29) Consultar todos os vendedores que registraram pedidos. 
+-- Saida: id, nome, cpf, status, salario do vendedor + id, data, status do pedido
+-- todo vendedor é pessoa
+-----------------------------------------------------------------------------------
+SELECT P.id, P.nome, P.cpf, P.status,
+       V.salario,
+       PE.id, PE.data, PE.status
+FROM pessoa P, vendedor V, pedido PE 
+WHERE P.id = V.pessoaId AND V.pessoaId = PE.vendedorId
+GO
+
+--renomeando as colunas
+SELECT P.id cod_cliente, P.nome cliente, P.cpf cpf_cliente, P.status status_cliente,
+       V.salario [salario vendedor],
+       PE.id no_predido, PE.data data_predido, PE.status status_predido
+FROM pessoa P, vendedor V, pedido PE 
+WHERE P.id = V.pessoaId AND V.pessoaId = PE.vendedorId
+GO
+
+-----------------------------------------------------------------------------------
+-- 30) Consultar todos os pedidos e seus produtos. 
+-- Saida: id, data, status do pedido + id, descricao, qtd, valor dos produtos de cada pedido
+-----------------------------------------------------------------------------------
+SELECT PE.id, PE.data, PE.status, PE.clienteId, PE.vendedorId,
+       PR.id, PR.descricao, 
+       IP.qtd, IP.valor  
+FROM pedido PE, produto PR, itens_pedido IP
+WHERE PE.id = IP.pedidoId AND IP.produtoId = PR.id
+GO
+
+-----------------------------------------------------------------------------------
+-- 31) Consultar todos os pedidos e seus produtos. 
+-- Saida: id, data, status do pedido + id, descricao, qtd, valor dos produtos de cada pedido
+-- mais o total de cada item vendido
+-----------------------------------------------------------------------------------
+SELECT PE.id 'No. pedido', PE.data 'data pedido', PE.status 'situacao pedido', PE.clienteId cod_cliente, PE.vendedorId cod_vendedor,
+       PR.id cod_produto, PR.descricao produto, 
+       IP.qtd qtd_vendida, IP.valor valor_pago,
+       (IP.qtd * IP.valor) total_item --coluna criada apenas neste select
+FROM pedido PE, produto PR, itens_pedido IP
+WHERE PE.id = IP.pedidoId AND IP.produtoId = PR.id
+GO
+
+-----------------------------------------------------------------------------------
+-- 32) Consultar todos os clientes, seus pedidos e seus produtos de cada pedido. 
+-- Saida: id, nome, cpf, status do cliente
+--        id, data, id do vendedor, status do pedido
+--        id, descricao, qtd, valor dos produtos de cada pedido e total de cada item vendido
+-----------------------------------------------------------------------------------
+SELECT p.id, P.nome, P.cpf, P.status, 
+       C.renda, 
+       PE.id, PE.data, PE.vendedorId, PE.status,
+       PR.id, PR.descricao, 
+       IP.qtd, IP.valor
+FROM  pessoa P, cliente C, pedido PE, itens_pedido IP, produto PR
+WHERE P.id         = C.pessoaId   --juncao de pessoa com cliente (pessoas que sao clientes)
+AND   C.pessoaId   = PE.clienteId --cliente que fez pedido
+AND   PE.id        = IP.pedidoId  -- juncao de pedidos com itens dos pedidos
+AND   IP.produtoId = PR.id        --juncao dos itens dos pedidos com produtos
+GO
+
+
+
+-----------------------------------------------------------------------------------
+-- EXCLUI O BANCO DE DADOS Vendas_ADSBD
+-----------------------------------------------------------------------------------
+USE master
+go
+
+DROP DATABASE Vendas_ADSBD
+GO
+
+
+
+
+
+
+avulso----------------------------------------------------
+
+CONSTRAINT pk_pessoa PRIMARY KEY (id) --> como criar uma chave primaria como homem porra	
+CONSTRAINT uk_pessoa_cpf UNIQUE(cpf)  --> como criar uma chave unica como homem porra
+
+CONSTRAINT pkitenspedido PRIMARY KEY(pedido_id, produto_id) --> chave primaria composta
+
+tabela cliente de homem porra-----------------------------
+CREATE TABLE cliente
+(
+	id	  INT     NOT NULL IDENTITY,
+	id_pessoa INT     NOT NULL,
+	renda	  DECIMAL NOT NULL,
+	credito   DECIMAL NOT NULL,
+
+	CONSTRAINT pk_cliente        PRIMARY KEY (id),
+	CONSTRAINT fk_cliente_pessoa FOREIGN KEY (id_pessoa) REFERENCES pessoa (id)
+);
+GO
+
+para consultas complexas----------------------------------------------------
+SELECT 
+	* 
+FROM 
+	pessoa;

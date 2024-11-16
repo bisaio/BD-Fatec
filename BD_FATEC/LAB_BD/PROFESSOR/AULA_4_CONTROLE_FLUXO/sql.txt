@@ -1,0 +1,222 @@
+SELECT name FROM sys.databases;
+
+IF EXISTS(SELECT * FROM sys.databases WHERE name = 'db20082024')
+--(SELECT 1 FROM sys.databases WHERE name='db20082024')
+BEGIN
+    PRINT('Existe!');
+END
+ELSE
+BEGIN
+    PRINT('Não existe!');
+END;
+
+
+
+IF NOT EXISTS(SELECT * FROM sys.databases WHERE name = 'db28082024')
+BEGIN
+    CREATE DATABASE db28082024;
+END;
+
+IF EXISTS(SELECT * FROM sys.databases WHERE name = 'db280820242')
+BEGIN
+    DROP DATABASE db280820242
+END
+CREATE DATABASE db280820242
+
+SELECT * FROM sys.tables
+
+IF EXISTS(SELECT * FROM sys.tables WHERE name = 'padrao2')
+BEGIN
+    DROP TABLE padrao2;
+END;
+CREATE TABLE padrao2(
+id INT PRIMARY KEY IDENTITY
+);
+
+
+
+SELECT * FROM tb_teste;
+
+DECLARE @sal FLOAT = 1990;
+DECLARE @cmd VARCHAR(MAX);
+SET @cmd = CONCAT('SELECT * FROM tb_teste WHERE salario > ',@sal);
+
+EXEC(@cmd);
+DECLARE @tamanho INT = (SELECT COUNT() FROM tb_teste);
+
+IF @tamanho >= 1000
+BEGIN
+    RAISERROR('A tabela já está muito grande',16,1);
+END
+ELSE
+BEGIN
+    PRINT('Qualquer ação!');
+END;
+
+
+
+DECLARE @x FLOAT = 10, @y FLOAT = 2;
+
+BEGIN TRY
+    DECLARE @r FLOAT = FLOOR(RAND()10);
+
+    IF @r = 0
+    BEGIN
+        RAISERROR('Não se faz divisão por 0 nesta casa',18,18);
+    END;
+
+    PRINT(CONCAT(@x,'/',@y,'=', (@x/@y)));
+    PRINT(CONCAT(@x,'/',@r,'=', (@x/@r)));
+END TRY
+BEGIN CATCH
+    PRINT(CONCAT('x = ',@x));
+    PRINT(CONCAT('y = ',@y));
+    PRINT(CONCAT('r = ',@r));
+END CATCH;
+DECLARE @i INT = 0, 
+        @n INT = 1000;
+
+WHILE @i < @n
+BEGIN
+    DECLARE @dia INT = ROUND(RAND()30 + 1, 0),
+            @mes INT = ROUND(RAND()11 + 1, 0),
+            @ano INT = ROUND(RAND()*34 + 1994, 0);
+
+    DECLARE @data_str VARCHAR(MAX) = CONCAT(@ano,'-',@mes,'-',@dia);
+    DECLARE @data DATE;
+    BEGIN TRY
+        SET @data = CONVERT(DATE, @data_str);
+    END TRY
+    BEGIN CATCH
+        IF @mes = 2 -- Deu erro e o mês é fevereiro!
+        BEGIN
+            SET @dia = 28;
+        END
+        ELSE
+        BEGIN
+            SET @dia = 30;
+        END;
+    END CATCH;
+
+    --BEGIN TRY
+
+        SET @data_str = CONCAT(@ano,'-',@mes,'-',@dia);
+
+        SET @data = CONVERT(DATE, @data_str);
+        PRINT(CONCAT('Data = ',@data));
+    --END TRY
+    --BEGIN CATCH
+    --    PRINT(CONCAT(CHAR(13),'Dia = ',@dia,CHAR(13),'Mes = ',@mes,CHAR(13),'Ano = ',@ano,CHAR(13)));
+--    END CATCH;
+
+    SET @i = @i + 1;
+END;
+USE db28082024;
+
+/Resolução do exercício 1/
+
+DECLARE @nome VARCHAR(10) = LEFT(NEWID(),10);
+PRINT(@nome);
+
+DECLARE @salario FLOAT = (RAND() * 500 + 1500);
+PRINT(@salario);
+
+DECLARE @dia INT = ROUND(RAND() * 30 + 1, 0),
+        -- @mes INT = CEIL(12 * RAND())
+        @mes INT = ROUND(RAND() * 11 + 1, 0),
+        @ano INT = ROUND(RAND() * 34 + 1990, 0);
+
+-- Se o mês deveria ter no máximo 30 dias
+IF ((@mes = 4) OR (@mes = 6) OR (@mes = 9) OR (@mes = 11))
+BEGIN
+    -- mas tem 31
+    IF (@dia = 31)
+    BEGIN
+        SET @dia = 30;
+    END;
+END;
+-- Tratamento especial para fevereiro
+IF @mes = 2
+BEGIN
+    IF ((@dia = 29) OR (@dia = 30) OR (@dia = 31)) -- @dia >= 29
+    BEGIN
+        SET @dia = 28;
+    END;
+END;
+
+DECLARE @data_final DATE;
+DECLARE @data_str VARCHAR(MAX);
+SET @data_str = CONCAT(@ano,'-',@mes,'-',@dia);
+SET @data_final = CONVERT(DATE,@data_str);
+
+INSERT INTO tb_teste
+VALUES (@nome, @salario, @data_final);
+
+SELECT * FROM tb_teste;
+/Resolução do ex. 2/
+
+DECLARE @i INT = 1,
+        @n INT = 1000;
+WHILE @i <= @n
+BEGIN
+    DECLARE @nome VARCHAR(10) = LEFT(NEWID(),10);
+    PRINT(@nome);
+
+    DECLARE @salario FLOAT = (RAND() * 500 + 1500);
+    PRINT(@salario);
+
+    DECLARE @dia INT = ROUND(RAND() * 30 + 1, 0),
+            -- @mes INT = CEIL(12 * RAND())
+            @mes INT = ROUND(RAND() * 11 + 1, 0),
+            @ano INT = ROUND(RAND() * 34 + 1990, 0);
+
+    -- Se o mês deveria ter no máximo 30 dias
+    IF ((@mes = 4) OR (@mes = 6) OR (@mes = 9) OR (@mes = 11))
+    BEGIN
+        -- mas tem 31
+        IF (@dia = 31)
+        BEGIN
+            SET @dia = 30;
+        END;
+    END;
+    -- Tratamento especial para fevereiro
+    IF @mes = 2
+    BEGIN
+        IF ((@dia = 29) OR (@dia = 30) OR (@dia = 31)) -- @dia >= 29
+        BEGIN
+            SET @dia = 28;
+        END;
+    END;
+
+    DECLARE @data_final DATE;
+    DECLARE @data_str VARCHAR(MAX);
+    SET @data_str = CONCAT(@ano,'-',@mes,'-',@dia);
+    SET @data_final = CONVERT(DATE,@data_str);
+
+    INSERT INTO tb_teste
+    VALUES (@nome, @salario, @data_final);
+
+
+
+    SET @i = @i + 1;
+END;
+
+SELECT * FROM tb_teste;
+
+
+
+/Exercício 3/
+
+BEGIN TRY
+    CREATE TABLE padrao1 (
+        id INT PRIMARY KEY IDENTITY,
+        nome VARCHAR(MAX)
+    );
+END TRY
+BEGIN CATCH
+    DROP TABLE padrao1;
+    CREATE TABLE padrao1 (
+        id INT PRIMARY KEY IDENTITY,
+        nome VARCHAR(MAX)
+    );
+END CATCH
